@@ -107,9 +107,9 @@ class SdlGameWindow(AbstractGameWindow):
 
         return window, windowSurface, windowBuffer
 
-    def dump(self,filename):
+    def dump(self, filename, dump_all=True):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
-        if __debug__:
+        if __debug__ and dump_all:
             sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"_tileData.bmp")
             sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"_tileView1.bmp")
             sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")

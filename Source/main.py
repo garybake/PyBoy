@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 1
+    scale = 2
     debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories

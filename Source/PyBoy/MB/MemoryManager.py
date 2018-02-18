@@ -55,18 +55,19 @@ def __getitem__(self, i):
     else:
         raise Exception("Memory access violation. Tried to read: %s" % hex(i))
 
-def __setitem__(self,i,value):
+
+def __setitem__(self, i, value):
     assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
-            # CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i))),\
+    # CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i))),\
 
     if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-        self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
+        self.cartridge[i] = value  # Doesn't change the data. This is for MBC commands
     elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
-        self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
+        self.cartridge[i] = value  # Doesn't change the data. This is for MBC commands
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
         self.lcd.VRAM[i - 0x8000] = value
         if i < 0x9800: # Is within tile data -- not tile maps
-            self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
+            self.lcd.tilesChanged.add(i & 0xFFF0)  # Mask out the byte of the tile
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         self.cartridge[i] = value
     elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -112,10 +113,30 @@ def __setitem__(self,i,value):
     else:
         raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
-def transferDMAtoOAM(self,src,dst=0xFE00):
+
+def transferDMAtoOAM(self, src, dst=0xFE00):
     # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
     # TODO: Add timing delay of 160µs and disallow access to RAM!
     offset = src * 0x100
     for n in xrange(0x00,0xA0):
         self.__setitem__(dst + n, self.__getitem__(n + offset))
 
+
+def get_mem_array(self, mem_locs=None):
+    """
+    Returns a dict of values
+    { mem_loc: mem_value}
+    Can filter mem_locs by passting in an array of mem_locs
+    """
+    mem_vals = {}
+    if mem_locs:
+        for m in mem_locs:
+            mem_vals[m] = self[m]
+    else:
+        for i in range(0xFFFF):
+            try:
+                mem_vals[i] = self[i]
+            except ValueError as valerr:
+                print(valerr)
+
+    return mem_vals
