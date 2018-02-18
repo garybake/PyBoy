@@ -1,3 +1,7 @@
+# GaryBake
+ - Changes by me to the original PyBoy to support reinforcement learning
+ - If I can get it to vaguely play mario I'll be happy
+
 # PyBoy
 
 It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
