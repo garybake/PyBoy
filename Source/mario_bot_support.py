@@ -100,6 +100,7 @@ def find_increasing_mem_locations():
 
             if frame == 10:
                 pyboy.mb.loadState(save_file)
+                pyboy.sendInput([WindowEvent.PressArrowRight])
 
             elif frame == 50:
                 pyboy.sendInput([WindowEvent.PressButtonA])
@@ -109,8 +110,8 @@ def find_increasing_mem_locations():
             if frame == 55:
                 candidate_mem_locs = pyboy.mb.get_mem_array()
 
-            elif frame == 10:
-                pyboy.sendInput([WindowEvent.PressArrowRight])
+            if frame == 100:
+                pyboy.sendInput([WindowEvent.PressButtonB])
 
             if frame > 20:
                 if (frame % 10 == 0):
@@ -126,13 +127,13 @@ def find_increasing_mem_locations():
             #     #         print('Sprite: {} {}'.format(n, sprite.get_attributes()))
 
             if (frame > 79) and (frame % 10 == 0):
-                mem_list = pyboy.mb.get_mem_array()
+                mem_list = pyboy.mb.get_mem_array(bits=16)
                 candidate_mem_locs = filter_mem_locs(candidate_mem_locs, mem_list)
                 print('-- Mem Pass {}: {}'.format(frame, len(candidate_mem_locs)))
                 for k in candidate_mem_locs:
                     print('{}: {}'.format(hex(k), hex(candidate_mem_locs[k])))
 
-            if frame == 300:
+            if frame == 500:
                 pyboy.stop()
 
             frame += 1
@@ -155,3 +156,7 @@ if __name__ == "__main__":
 # 0xeff1: 0xf4
 # 0xffac: 0xfc -- stay still
 # 0xffae: 0xa3
+
+# 16 bit inc =)
+# 0xc0aa: 0x2698
+# 0xe0aa: 0x2698

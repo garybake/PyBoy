@@ -122,21 +122,30 @@ def transferDMAtoOAM(self, src, dst=0xFE00):
         self.__setitem__(dst + n, self.__getitem__(n + offset))
 
 
-def get_mem_array(self, mem_locs=None):
+def read_word(self, addr, verbose=True):
+    return ((self[addr+1] << 8) | self[addr])
+
+
+def get_mem_array(self, mem_locs=None, bits=8):
     """
     Returns a dict of values
-    { mem_loc: mem_value}
+    {mem_loc: mem_value}
     Can filter mem_locs by passting in an array of mem_locs
     """
     mem_vals = {}
     if mem_locs:
-        for m in mem_locs:
-            mem_vals[m] = self[m]
+        if bits == 8:
+            for m in mem_locs:
+                mem_vals[m] = self[m]
+        else:
+            for m in mem_locs:
+                mem_vals[m] = self.read_word(m)
     else:
-        for i in range(0xFFFF):
-            try:
-                mem_vals[i] = self[i]
-            except ValueError as valerr:
-                print(valerr)
+        if bits == 8:
+            for m in range(0xFFFF):
+                mem_vals[m] = self[m]
+        else:
+            for m in range(0xFFFF):
+                mem_vals[m] = self.read_word(m)
 
     return mem_vals

@@ -12,7 +12,7 @@ from .. import CPU, RAM, Cartridge, BootROM, LCD, Interaction, Timer, CoreDump
 
 
 class Motherboard():
-    from MemoryManager import __getitem__, __setitem__, transferDMAtoOAM, get_mem_array
+    from MemoryManager import __getitem__, __setitem__, transferDMAtoOAM, get_mem_array, read_word
     from StateManager import saveState, loadState
     from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from ..CPU.flags import TIMER
@@ -34,7 +34,6 @@ class Motherboard():
         self.cpu = CPU.CPU(self, profiling)
         self.lcd = LCD.LCD(self)
         self.bootROMEnabled = True
-        self.get_mem_array
 
         if "loadState" in sys.argv:
             self.loadState(self.cartridge.filename+".state")
