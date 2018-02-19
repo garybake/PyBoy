@@ -1,10 +1,10 @@
 #! /usr/local/bin/python3
-# -*- encoding: utf-8 -*-
 #
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
-# License: See LICENSE file
-# GitHub: https://github.com/Baekalfen/PyBoy
-#
+# Support functions for mario_bot
+# Used to:
+#  - Create restore point
+#  - Find relavent memory locations
+#  - Other goodness
 
 import traceback
 import time
@@ -96,7 +96,7 @@ def find_increasing_mem_locations():
         while not pyboy.tick():
 
             if (frame % 10 == 0):
-                print("frame: {}".format(frame))
+                logger.info("frame: {}".format(frame))
 
             if frame == 10:
                 pyboy.mb.loadState(save_file)
@@ -129,9 +129,9 @@ def find_increasing_mem_locations():
             if (frame > 79) and (frame % 10 == 0):
                 mem_list = pyboy.mb.get_mem_array(bits=16)
                 candidate_mem_locs = filter_mem_locs(candidate_mem_locs, mem_list)
-                print('-- Mem Pass {}: {}'.format(frame, len(candidate_mem_locs)))
+                logger.info('-- Mem Pass {}: {}'.format(frame, len(candidate_mem_locs)))
                 for k in candidate_mem_locs:
-                    print('{}: {}'.format(hex(k), hex(candidate_mem_locs[k])))
+                    logger.info('{}: {}'.format(hex(k), hex(candidate_mem_locs[k])))
 
             if frame == 500:
                 pyboy.stop()
@@ -159,4 +159,4 @@ if __name__ == "__main__":
 
 # 16 bit inc =)
 # 0xc0aa: 0x2698
-# 0xe0aa: 0x2698
+# 0xe0aa: 0x2698  -- echo RAM

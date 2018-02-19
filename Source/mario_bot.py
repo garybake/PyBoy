@@ -1,18 +1,15 @@
 #! /usr/local/bin/python3
-# -*- encoding: utf-8 -*-
-#
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
-# License: See LICENSE file
-# GitHub: https://github.com/Baekalfen/PyBoy
-#
+
+# Mario Bot
+# Reinforcement Learning with Mario
 
 import traceback
-import time
+# import time
 import os.path
 import os
 import sys
-import numpy as np
-import platform
+# import numpy as np
+# import platform
 from PyBoy.Logger import logger
 from PyBoy.WindowEvent import WindowEvent
 
@@ -21,7 +18,22 @@ from PyBoy import PyBoy
 from PyBoy.GameWindow import SdlGameWindow as Window
 
 
+MEM_MARIO_X = 0xc0aa
+MAX_ITERATIONS = 3
+
 stop_at_frame = -1
+
+
+def reset_env(pyboy, save_file):
+    pyboy.sendInput([WindowEvent.ReleaseButtonA])
+    pyboy.sendInput([WindowEvent.ReleaseButtonB])
+    pyboy.sendInput([WindowEvent.ReleaseArrowUp])
+    pyboy.sendInput([WindowEvent.ReleaseArrowRight])
+    pyboy.sendInput([WindowEvent.ReleaseArrowDown])
+    pyboy.sendInput([WindowEvent.ReleaseArrowLeft])
+    pyboy.mb.loadState(save_file)
+    frame = 11
+    return frame
 
 
 def getROM(rom_dir):
@@ -44,13 +56,15 @@ if __name__ == "__main__":
 
         # Start PyBoy and run loop
         pyboy = PyBoy(Window(scale=scale), filename, boot_rom)
+        iteration = 1
         frame = 0
         view = pyboy.getTileView(False)
+
+        logger.info('Starting iteration: {}'.format(iteration))
         while not pyboy.tick():
 
             if (frame % 10 == 0):
-                # print("frame: {}".format(frame))
-                print("X_{}: {} {}".format(frame, pyboy.mb[0xc20b], pyboy.mb[0xe20b]))
+                logger.info("Frame: {} \t x: {}".format(frame, pyboy.mb.read_word(MEM_MARIO_X)))
 
             if frame == 10:
                 pyboy.mb.loadState(save_file)
@@ -67,31 +81,19 @@ if __name__ == "__main__":
                     elif (frame % 10 == 5):
                             pyboy.sendInput([WindowEvent.ReleaseButtonA])
 
-                # print('Screen pos: {}'.format(pyboy.getScreenPosition()))
-
-                # As an example, it could be useful to know the coordinates
-                # of the sprites on the screen and which they look like.
-                # for n in range(40):
-                #     sprite = pyboy.getSprite(n)
-                #     if sprite.is_on_screen():
-                #         print('Sprite: {} {} {} {}'.format(n, sprite.get_x(), sprite.get_y(), sprite.get_tile()))
-
                 # Check for death
-                # Run for 10 more frames
                 if not pyboy.getSprite(3).is_on_screen():
-                    if stop_at_frame == -1:
-                        stop_at_frame = frame + 50
-                        print('Stopping at frame {}'.format(stop_at_frame))
+                    if iteration >= MAX_ITERATIONS:
+                        pyboy.stop()
 
-                # time.sleep(0.1)
+                    frame = reset_env(pyboy, save_file)
+                    iteration += 1
+                    logger.info('Starting iteration: {}'.format(iteration))
 
+                    # time.sleep(0.1)
 
-            # if frame == stop_at_frame:
-            #     # pyboy.stop()
-            #     print('Resetting here *****')
-            #     time.sleep(0.5)
-            #     stop_at_frame = -1
-            #     pyboy.mb.loadState(save_file)
+            if frame == 500:
+                pyboy.stop()
 
             frame += 1
         pyboy.stop()

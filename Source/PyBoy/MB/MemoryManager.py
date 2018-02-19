@@ -57,7 +57,7 @@ def __getitem__(self, i):
 
 
 def __setitem__(self, i, value):
-    assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
+    assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value), hex(i))
     # CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i))),\
 
     if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
@@ -66,7 +66,7 @@ def __setitem__(self, i, value):
         self.cartridge[i] = value  # Doesn't change the data. This is for MBC commands
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
         self.lcd.VRAM[i - 0x8000] = value
-        if i < 0x9800: # Is within tile data -- not tile maps
+        if i < 0x9800:  # Is within tile data -- not tile maps
             self.lcd.tilesChanged.add(i & 0xFFF0)  # Mask out the byte of the tile
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         self.cartridge[i] = value
@@ -118,11 +118,11 @@ def transferDMAtoOAM(self, src, dst=0xFE00):
     # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
     # TODO: Add timing delay of 160µs and disallow access to RAM!
     offset = src * 0x100
-    for n in xrange(0x00,0xA0):
+    for n in xrange(0x00, 0xA0):
         self.__setitem__(dst + n, self.__getitem__(n + offset))
 
 
-def read_word(self, addr, verbose=True):
+def read_word(self, addr):
     return ((self[addr+1] << 8) | self[addr])
 
 
@@ -135,17 +135,17 @@ def get_mem_array(self, mem_locs=None, bits=8):
     mem_vals = {}
     if mem_locs:
         if bits == 8:
-            for m in mem_locs:
-                mem_vals[m] = self[m]
+            for addr in mem_locs:
+                mem_vals[addr] = self[addr]
         else:
-            for m in mem_locs:
-                mem_vals[m] = self.read_word(m)
+            for addr in mem_locs:
+                mem_vals[addr] = self.read_word(addr)
     else:
         if bits == 8:
-            for m in range(0xFFFF):
-                mem_vals[m] = self[m]
+            for addr in range(0xFFFF):
+                mem_vals[addr] = self[addr]
         else:
-            for m in range(0xFFFF):
-                mem_vals[m] = self.read_word(m)
+            for addr in range(0xFFFF):
+                mem_vals[addr] = self.read_word(addr)
 
     return mem_vals
