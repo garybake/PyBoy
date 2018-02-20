@@ -21,7 +21,12 @@ from mario_env import MarioEnv
 
 MAX_ITERATIONS = 3
 
+ACTION_NONE = 0
+ACTION_RIGHT = 3
+ACTION_LEFT = 7
+
 stop_at_frame = -1
+
 
 
 def getROM(rom_dir):
@@ -54,7 +59,11 @@ if __name__ == "__main__":
         env.reset()
 
         for x in range(500):
-            obs, reward, done, _ = env.step(action='right')
+
+            # next_action = ACTION_RIGHT
+            next_action = env.action_space_sample()
+
+            obs, reward, done, _ = env.step(action=next_action)
 
             frame = env.frame
             if (frame % 10 == 0):

@@ -2,11 +2,20 @@
 Basic environment
 Mimic OpenAI gym (minimally)
 """
+import random
 
 from PyBoy.WindowEvent import WindowEvent
 from PyBoy.Logger import logger
 
 MEM_MARIO_X = 0xc0aa
+
+ACTION_NONE = 0
+ACTION_RIGHT = 3
+ACTION_LEFT = 7
+
+
+def sample(moves):
+    return random.choice(moves)
 
 
 class MarioEnv:
@@ -27,6 +36,36 @@ class MarioEnv:
         self.frame = 0
         self.ctrl_left = False
         self.ctrl_right = False
+        self.prev_x = 0  # x of previous step
+        self.action_space = self._get_action_space()
+
+    def action_space_sample(self):
+        """
+        TODO how to add this func to action space?
+        Should be actionspace.sample()?
+        """
+        return random.choice(self.action_space)
+
+    def _get_action_space(self):
+        """
+        Returns a tuple of list of actions
+        TODO: add more actions
+        """
+        return (0, 3, 7)
+
+    def _clear_inputs(self):
+        """
+        Clears all key presses
+        TODO: Start/select?
+        """
+
+        pyboy = self.pyboy
+        pyboy.sendInput([WindowEvent.ReleaseButtonA])
+        pyboy.sendInput([WindowEvent.ReleaseButtonB])
+        pyboy.sendInput([WindowEvent.ReleaseArrowUp])
+        pyboy.sendInput([WindowEvent.ReleaseArrowRight])
+        pyboy.sendInput([WindowEvent.ReleaseArrowDown])
+        pyboy.sendInput([WindowEvent.ReleaseArrowLeft])
 
     def reset(self):
         """
@@ -36,16 +75,9 @@ class MarioEnv:
         :return: Frame number of the save state
         :rtype: int
         """
-        pyboy = self.pyboy
+        self._clear_inputs()
 
-        pyboy.sendInput([WindowEvent.ReleaseButtonA])
-        pyboy.sendInput([WindowEvent.ReleaseButtonB])
-        pyboy.sendInput([WindowEvent.ReleaseArrowUp])
-        pyboy.sendInput([WindowEvent.ReleaseArrowRight])
-        pyboy.sendInput([WindowEvent.ReleaseArrowDown])
-        pyboy.sendInput([WindowEvent.ReleaseArrowLeft])
-
-        pyboy.mb.loadState(self.state_file)
+        self.pyboy.mb.loadState(self.state_file)
 
         self.frame = 0
         return self.frame
@@ -61,7 +93,7 @@ class MarioEnv:
         mario_x = self.pyboy.mb.read_word(MEM_MARIO_X)
         return [mario_x]
 
-    def get_action_outcome(self):
+    def _get_action_outcome(self):
         """
         Get the outcome of the last action
 
@@ -76,7 +108,7 @@ class MarioEnv:
         outcome = [
             self.obs(),  # state
             1.0,  # reward
-            game_over,  # Game over?
+            game_over,  # Game over
             None  # Debug info
         ]
         return outcome
@@ -96,22 +128,37 @@ class MarioEnv:
         :rtype: tuple
         """
 
-        if action == 'right':
-            if self.ctrl_left:
-                self.pyboy.sendInput([WindowEvent.ReleaseArrowLeft])
-            self.pyboy.sendInput([WindowEvent.PressArrowRight])
-            self.ctrl_right = True
-        elif action == 'left':
-            if self.ctrl_right:
-                self.pyboy.sendInput([WindowEvent.ReleaseArrowRight])
-            self.pyboy.sendInput([WindowEvent.PressArrowLeft])
-            self.ctrl_left = True
+        if action:
+            self._clear_inputs()
+            if action == ACTION_NONE:
+                pass
+            elif action == ACTION_RIGHT:
+                self.pyboy.sendInput([WindowEvent.PressArrowRight])
+                self.ctrl_right = True
+            elif action == ACTION_LEFT:
+                self.pyboy.sendInput([WindowEvent.PressArrowLeft])
+                self.ctrl_left = True
 
         stop = self.pyboy.tick()
-        outcome = self.get_action_outcome()
+        outcome = self._get_action_outcome()
 
         if stop or outcome[2]:
             raise StopIteration
 
         self.frame += 1
+        self.prev_x = outcome[0][0]
         return outcome
+
+    def render(self, mode=None):
+        """
+        Returns and image of the env/screen
+        TODO
+        """
+        return None
+
+    def shape(self):
+        """
+        Returns the shape of the observation
+        TODO
+        """
+        return (1)
