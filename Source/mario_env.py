@@ -4,6 +4,10 @@ Mimic OpenAI gym (minimally)
 """
 import random
 
+# from Debug import Debug
+from PyBoy import PyBoy
+from PyBoy.GameWindow import SdlGameWindow as Window
+
 from PyBoy.WindowEvent import WindowEvent
 from PyBoy.Logger import logger
 
@@ -23,15 +27,19 @@ class MarioEnv:
     Environment to play super mario land on the gb
     """
 
-    def __init__(self, pyboy, state_file):
+    boot_rom = None
+
+    def __init__(self, rom_file, state_file, scale=2):
         """
         Initialise the environment
         TODO: This should create the pyboy instance
 
-        :param PyBoy pyboy: PyBoy instance to run
+        :param string rom_file: Cartridge rom file
         :param string state_file: State file to load
+        :param int scale: Scale size of window
         """
-        self.pyboy = pyboy
+
+        self.pyboy = PyBoy(Window(scale=scale), rom_file, self.boot_rom)
         self.state_file = state_file
         self.frame = 0
         self.ctrl_left = False
