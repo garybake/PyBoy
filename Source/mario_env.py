@@ -88,7 +88,7 @@ class MarioEnv:
         self.pyboy.mb.loadState(self.state_file)
 
         self.frame = 0
-        return self.frame
+        return [0]
 
     def obs(self):
         """
@@ -109,9 +109,9 @@ class MarioEnv:
         :rtype: tuple
         """
         game_over = False
-        # if not self.pyboy.getSprite(3).is_on_screen():
-        #     game_over = True
-        #     logger.debug('Mario death')
+        if (self.frame > 10) and not self.pyboy.getSprite(3).is_on_screen():
+            game_over = True
+            logger.debug('Mario death')
 
         outcome = [
             self.obs(),  # state
@@ -126,10 +126,7 @@ class MarioEnv:
         Step the environment forward 1 cycle
         Handles input
 
-        TODO: handling no input?
         None = clear all input
-        Diff = clear inputs and do new
-        Same as last = continue
         Need to reward pressing right?
 
         :return: Outcome - state, reward, done, info
@@ -150,8 +147,8 @@ class MarioEnv:
         stop = self.pyboy.tick()
         outcome = self._get_action_outcome()
 
-        if stop or outcome[2]:
-            raise StopIteration
+        if stop:
+            outcome[2] = True
 
         self.frame += 1
         self.prev_x = outcome[0][0]

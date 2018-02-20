@@ -4,10 +4,8 @@
 # Reinforcement Learning with Mario
 
 import traceback
-# import time
-import os.path
 import os
-import sys
+
 from PyBoy.Logger import logger
 
 from mario_env import MarioEnv
@@ -21,39 +19,47 @@ ACTION_LEFT = 7
 stop_at_frame = -1
 
 
+def basic_policy(obs):
+    mario_x = obs[0]
+    return ACTION_RIGHT
+
+
 def main():
     rom_file = os.path.join('ROMs', 'mario.gb')
     state_file = os.path.join('saveStates', 'mario_save')
 
     try:
 
-        iteration = 1
-
-        logger.info('Starting iteration: {}'.format(iteration))
+        logger.info('Starting environment')
         env = MarioEnv(rom_file, state_file)
+        # env.reset()
+    except Exception as e:
+        logger.error('Failed to start environment')
+        logger.error(e)
+        traceback.print_exc()
 
-        env.reset()
+    totals = []
+    try:
+        for episode in range(3):
+            episode_rewards = 0
+            obs = env.reset()
 
-        done = False
-        while not done:
-
-            next_action = ACTION_RIGHT
-            # next_action = env.action_space_sample()
-
-            obs, reward, done, _ = env.step(action=next_action)
-
-            frame = env.frame
-            if (frame % 10 == 0):
-                logger.info("Frame: {} \t x: {}".format(frame, (obs, reward, done)))
-
-            if frame == 500:
-                done = True
+            for step in range(500):  # 500 steps max
+                action = basic_policy(obs)
+                obs, reward, done, _ = env.step(action=action)
+                episode_rewards += reward
+                if done:
+                    break
+            totals.append(episode_rewards)
 
     except KeyboardInterrupt:
         print("Interrupted by keyboard")
-    except Exception as ex:
+    except Exception as e:
+        logger.error('Failed during run')
+        logger.error(e)
         traceback.print_exc()
 
+    logger.info('Totals: {}'.format(totals))
 
 if __name__ == "__main__":
     main()
