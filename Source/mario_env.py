@@ -122,6 +122,16 @@ class MarioEnv:
         mario_v = self._get_avg_speed()
         return [mario_x, mario_v]
 
+    def get_reward(self):
+        """
+        Calculate reward for last action state
+        X - reward going right
+
+        :return: Reward
+        :rtype: int
+        """
+        return self._mario_x
+
     def _get_action_outcome(self):
         """
         Get the outcome of the last action
@@ -136,7 +146,7 @@ class MarioEnv:
 
         outcome = [
             self.obs(),  # state
-            1.0,  # reward
+            self.get_reward(),  # reward
             game_over,  # Game over
             None  # Debug info
         ]

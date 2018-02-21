@@ -51,7 +51,7 @@ def main():
                 obs, reward, done, _ = env.step(action=action)
 
                 if step % 10 == 0:
-                    logger.debug(obs)
+                    logger.debug('reward: {}, obs: {}'.format(reward, obs))
 
                 episode_rewards += reward
                 if done:
