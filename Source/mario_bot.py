@@ -21,7 +21,9 @@ stop_at_frame = -1
 
 def basic_policy(obs):
     mario_x = obs[0]
-    return ACTION_RIGHT
+    if mario_x < 4000:
+        return ACTION_RIGHT
+    return ACTION_LEFT
 
 
 def main():
@@ -47,6 +49,10 @@ def main():
             for step in range(500):  # 500 steps max
                 action = basic_policy(obs)
                 obs, reward, done, _ = env.step(action=action)
+
+                if step % 10 == 0:
+                    logger.debug(obs)
+
                 episode_rewards += reward
                 if done:
                     break

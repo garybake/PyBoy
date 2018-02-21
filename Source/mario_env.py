@@ -1,6 +1,11 @@
 """
 Basic environment
 Mimic OpenAI gym (minimally)
+
+Notes
+ - When running left mario_x doesn't change
+ - x changes are about every 5 ticks at std speed
+
 """
 import random
 
@@ -28,6 +33,9 @@ class MarioEnv:
     """
 
     boot_rom = None
+    # Remember last 10 steps
+    # Looks like normal walk updates every 5 ticks
+    max_x_steps = 20
 
     def __init__(self, rom_file, state_file, scale=2):
         """
@@ -44,7 +52,8 @@ class MarioEnv:
         self.frame = 0
         self.ctrl_left = False
         self.ctrl_right = False
-        self.prev_x = 0  # x of previous step
+        self._mario_x = 0
+        self._prev_x_steps = [0] * self.max_x_steps  # previous x vals
         self.action_space = self._get_action_space()
 
     def action_space_sample(self):
@@ -70,7 +79,7 @@ class MarioEnv:
         pyboy = self.pyboy
         pyboy.sendInput([WindowEvent.ReleaseButtonA])
         pyboy.sendInput([WindowEvent.ReleaseButtonB])
-        pyboy.sendInput([WindowEvent.ReleaseArrowUp])
+        pyboy.sendInput([WindowEvent.ReleaseArrowUp])  # Is this used in sml?
         pyboy.sendInput([WindowEvent.ReleaseArrowRight])
         pyboy.sendInput([WindowEvent.ReleaseArrowDown])
         pyboy.sendInput([WindowEvent.ReleaseArrowLeft])
@@ -90,6 +99,17 @@ class MarioEnv:
         self.frame = 0
         return [0]
 
+    def _get_avg_speed(self):
+        """
+        Change in x over max_x_steps ticks
+
+        :return: Marios velocity
+        :rtype: int
+        """
+        steps = self._prev_x_steps
+        v = steps[-1] - steps[0]
+        return v
+
     def obs(self):
         """
         Get current state of the environment
@@ -98,8 +118,9 @@ class MarioEnv:
         :return: Array of observation values
         :rtype: array
         """
-        mario_x = self.pyboy.mb.read_word(MEM_MARIO_X)
-        return [mario_x]
+        mario_x = self._mario_x
+        mario_v = self._get_avg_speed()
+        return [mario_x, mario_v]
 
     def _get_action_outcome(self):
         """
@@ -145,13 +166,20 @@ class MarioEnv:
                 self.ctrl_left = True
 
         stop = self.pyboy.tick()
+
         outcome = self._get_action_outcome()
+
+        # Update enviroment
+        self._mario_x = self.pyboy.mb.read_word(MEM_MARIO_X)
+        # TODO can we just update steps every x ticks?
+        self._prev_x_steps.pop(0)
+        self._prev_x_steps.append(self._mario_x)
 
         if stop:
             outcome[2] = True
 
         self.frame += 1
-        self.prev_x = outcome[0][0]
+        self._prev_x = outcome[0][0]
         return outcome
 
     def render(self, mode=None):
