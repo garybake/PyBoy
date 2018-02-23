@@ -29,7 +29,7 @@ def Cartridge(filename):
         raise Exception("Catridge type invalid: %s" % cartType)
 
     logger.info("Cartridge type: 0x%0.2x - %s, %s" % (cartType, cartInfo[0].__name__, ", ".join([x for x, y in zip(["SRAM", "Battery", "RTC"], cartInfo[1:]) if y == True])))
-    logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" % (len(ROMBanks), ExRAMTable.get(exRAMCount,None)))
+    logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" % (len(ROMBanks), ExRAMTable.get(exRAMCount, None)))
     ROMBankController = cartridgeTable[cartType]
 
     return ROMBankController[0](filename, ROMBanks, exRAMCount, cartType, *ROMBankController[1:])
@@ -48,10 +48,13 @@ def loadROMfile(filename):
         ROMData = ROMFile.read()
 
         bankSize = (16 * 1024)
-        ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
+        ROMBanks = [[0] * bankSize for n in range(len(ROMData) // bankSize)]
 
         for i, byte in enumerate(ROMData):
-            ROMBanks[i / bankSize][i % bankSize] = ord(byte)
+            if type(byte) is str:
+                ROMBanks[i // bankSize][i % bankSize] = ord(byte)
+            else:
+                ROMBanks[i // bankSize][i % bankSize] = byte
 
     return ROMBanks
 

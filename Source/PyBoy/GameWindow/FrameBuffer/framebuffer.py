@@ -19,7 +19,7 @@ class FrameBuffer(object):
         self._scaleFactor = scaleFactor
         print('---')
 
-        self._cache = np.zeros(tuple(int(x / scaleFactor) for x in array.shape), dtype=np.uint32)
+        self._cache = np.zeros(tuple(x // scaleFactor for x in array.shape), dtype=np.uint32)
 
     def fill(self, val):
         self._cache.fill(val)
@@ -43,7 +43,7 @@ class ScaledFrameBuffer(FrameBuffer):
 
     def update(self):
         for (x, y), _ in np.ndenumerate(self._array):
-            self._array[x, y] = self._cache[x/self._scaleFactor, y/self._scaleFactor]
+            self._array[x, y] = self._cache[x // self._scaleFactor, y // self._scaleFactor]
 
 
 class SimpleFrameBuffer(FrameBuffer):

@@ -28,11 +28,12 @@ class PyBoy():
         self.mb = None
         self.window = window
 
-        if "debug" in sys.argv and platform.system() != "Windows":
-            self.debugger = Debug()
-            self.debugger.tick()
-        else:
-            addConsoleHandler()
+        # if "debug" in sys.argv and platform.system() != "Windows":
+        #     self.debugger = Debug()
+        #     self.debugger.tick()
+        # else:
+        #     addConsoleHandler()
+        addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
         self.mb = Motherboard(ROM, bootROM, window, profiling=self.profiling, debugger=self.debugger)
