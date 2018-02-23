@@ -4,6 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import sys
 
 from .. import CoreDump
 from .GenericMBC import GenericMBC, ROM_only
@@ -50,10 +51,13 @@ def loadROMfile(filename):
         bankSize = (16 * 1024)
         ROMBanks = [[0] * bankSize for n in range(len(ROMData) // bankSize)]
 
-        for i, byte in enumerate(ROMData):
-            if type(byte) is str:
+        if sys.version_info[0] < 3:
+            # Python 2
+            for i, byte in enumerate(ROMData):
                 ROMBanks[i // bankSize][i % bankSize] = ord(byte)
-            else:
+        else:
+            # Python 3
+            for i, byte in enumerate(ROMData):
                 ROMBanks[i // bankSize][i % bankSize] = byte
 
     return ROMBanks

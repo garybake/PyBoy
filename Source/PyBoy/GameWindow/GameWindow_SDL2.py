@@ -97,11 +97,6 @@ class SdlGameWindow(AbstractGameWindow):
 
         if __debug__:
             self.__setDebug()
-        # windowOffset = 0
-        # # Tile Data
-        # tiles = 384
-        # self.tileDataWidth = 16*8  # Change the 16 to whatever wide you want the tile window
-        # self.tileDataHeight = ((tiles*8) // self.tileDataWidth) * 8
 
     def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
         sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)
@@ -130,7 +125,7 @@ class SdlGameWindow(AbstractGameWindow):
         # Tile Data
         tiles = 384
         self.tileDataWidth = 16*8  # Change the 16 to whatever wide you want the tile window
-        self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
+        self.tileDataHeight = ((tiles*8) // self.tileDataWidth)*8
 
         self.tileDataWindow, self.tileDataWindowSurface, self.tileDataBuffer = \
             self.makeWindowAndGetBuffer(self.tileDataWidth, self.tileDataHeight, windowOffset, 0, "Tile Data")
@@ -349,7 +344,7 @@ class SdlGameWindow(AbstractGameWindow):
             tileColumn = (n-0x1C00) % winHorTileView2Limit  # Horizontal tile number wrapping on 16
             tileRow = (n-0x1C00) // winVerTileView2Limit  # Vertical time number based on tileColumn
 
-            fromXY = ((tileIndex*8) % self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
+            fromXY = ((tileIndex*8) % self.tileDataWidth, ((tileIndex*8) // self.tileDataWidth)*8)
             toXY = (tileColumn*8, tileRow*8)
 
             self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView2Buffer)
