@@ -6,8 +6,9 @@
 #
 from .. import CoreDump
 import os
-from RTC import RTC
+from .RTC import RTC
 from ..Logger import logger
+
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
@@ -22,7 +23,6 @@ class GenericMBC:
         if self.rtcEnabled:
             self.rtc = RTC()
 
-
         self.RAMBanks = None
         self.initRAMBanks(exRAMCount)
         self.gameName = self.getGameName(ROMBanks)
@@ -33,7 +33,7 @@ class GenericMBC:
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
 
-    def saveRAM(self, filename = None):
+    def saveRAM(self, filename=None):
         if self.RAMBanks is None:
             logger.info("Saving RAM is not supported on {}".format(self.cartType))
             return
@@ -50,7 +50,7 @@ class GenericMBC:
 
         logger.info("RAM saved.")
 
-    def loadRAM(self, filename = None):
+    def loadRAM(self, filename=None):
         if self.RAMBanks is None:
             logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return

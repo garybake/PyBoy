@@ -5,6 +5,7 @@
 
 import traceback
 import os
+import sys
 
 from PyBoy.Logger import logger
 
@@ -29,6 +30,7 @@ def basic_policy(obs):
 def main():
     rom_file = os.path.join('ROMs', 'mario.gb')
     state_file = os.path.join('saveStates', 'mario_save')
+    env = None
 
     try:
 
@@ -39,6 +41,7 @@ def main():
         logger.error('Failed to start environment')
         logger.error(e)
         traceback.print_exc()
+        sys.exit()
 
     totals = []
     try:

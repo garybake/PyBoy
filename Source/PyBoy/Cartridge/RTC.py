@@ -3,12 +3,15 @@
 # Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
-#
-from .. import CoreDump
+
+
 import time
 import os
 import struct
+
+from .. import CoreDump
 from ..Logger import logger
+
 
 class RTC():
     def __init__(self):
@@ -42,7 +45,7 @@ class RTC():
             return
 
         with open(rtcFile, "rb") as f:
-            self.timeZero = struct.unpack('f',f.read(4))[0]
+            self.timeZero = struct.unpack('f', f.read(4))[0]
             self.halt = ord(f.read(1))
             self.dayCarry = ord(f.read(1))
         logger.info("RTC loaded.")
@@ -59,7 +62,7 @@ class RTC():
         if self.dayLatchHigh > 1:
             self.dayCarry = 1
             self.dayLatchHigh &= 0b1
-            self.timeZero += 0x200 * 3600 * 24 # Add 0x200 (512) days to "reset" the day counter to zero
+            self.timeZero += 0x200 * 3600 * 24  # Add 0x200 (512) days to "reset" the day counter to zero
 
     def writeCommand(self, value):
         if value == 0x00:
@@ -97,7 +100,7 @@ class RTC():
 
         t = time.time() - self.timeZero
         if register == 0x08:
-            self.timeZero -= int(t % 60) - value # TODO: What happens, when these value are larger than allowed?
+            self.timeZero -= int(t % 60) - value  # TODO: What happens, when these value are larger than allowed?
         elif register == 0x09:
             self.timeZero -= int(t / 60 % 60) - value
         elif register == 0x0A:
@@ -111,11 +114,11 @@ class RTC():
 
             self.halt = halt
             if self.halt == 0:
-                pass # TODO: Start the timer
+                pass  # TODO: Start the timer
             else:
                 logger.warn("Stopping RTC is not implemented!")
 
-            self.timeZero -= int(t / 3600 / 24) - (dayHigh<<8)
+            self.timeZero -= int(t / 3600 / 24) - (dayHigh << 8)
             self.dayCarry = dayCarry
         else:
             logger.warn("Invalid RTC register: %0.4x %0.2x" % (register, value))

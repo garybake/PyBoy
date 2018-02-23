@@ -8,19 +8,22 @@
 
 import sys
 import time
+import platform
 
-from MB import Motherboard
-from WindowEvent import WindowEvent
-from Logger import logger, addConsoleHandler
-import BotSupport
-import Logger
-from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+import numpy as np
+
+from .MB import Motherboard
+from .WindowEvent import WindowEvent
+from .Logger import logger, addConsoleHandler
+from .BotSupport import Sprite, TileView
+from .opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
 
-SPF = 1/60. # inverse FPS (frame-per-second)
+SPF = 1/60.  # inverse FPS (frame-per-second)
+
 
 class PyBoy():
-    def __init__(self, window, ROM, bootROM = None):
+    def __init__(self, window, ROM, bootROM=None):
         self.debugger = None
         self.mb = None
         self.window = window
@@ -32,9 +35,9 @@ class PyBoy():
             addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(ROM, bootROM, window, profiling = self.profiling, debugger = self.debugger)
+        self.mb = Motherboard(ROM, bootROM, window, profiling=self.profiling, debugger=self.debugger)
 
-        if not self.debugger is None:
+        if self.debugger is not None:
             self.debugger.mb = self.mb
 
         self.exp_avg_emu = 0
@@ -51,14 +54,14 @@ class PyBoy():
         self.exp_avg_emu = 0.9 * self.exp_avg_emu + 0.1 * (self.t_VSynced-self.t_start)
         self.exp_avg_cpu = 0.9 * self.exp_avg_cpu + 0.1 * (self.t_frameDone-self.t_start_)
 
-        self.t_start_ = time.time() # Real-world time
-        self.t_start = time.clock() # Time on the CPU
+        self.t_start_ = time.time()  # Real-world time
+        self.t_start = time.clock()  # Time on the CPU
         for event in self.window.getEvents():
             if event == WindowEvent.Quit:
                 done = True
             elif event == WindowEvent.ReleaseSpeedUp:
                 self.limitEmulationSpeed ^= True
-                logger.info("Speed limit: %s" % limitEmulationSpeed)
+                logger.info("Speed limit: {}".format(limitEmulationSpeed))
             elif event == WindowEvent.SaveState:
                 self.mb.saveState(self.mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
@@ -73,13 +76,12 @@ class PyBoy():
         if self.debugger is None:
             self.mb.tickFrame()
         else:
-            if not self.debugger.tick(): # Returns false on keyboard interrupt
+            if not self.debugger.tick():  # Returns false on keyboard interrupt
                 done = True
 
             if not self.debugger.running:
                 self.mb.tickFrame()
         self.window.updateDisplay()
-
 
         self.t_VSynced = time.clock()
 
@@ -88,7 +90,6 @@ class PyBoy():
             # This one makes time and frame syncing work, but messes with time.clock()
             self.window.VSync()
         self.t_frameDone = time.time()
-
 
         if self.counter % 60 == 0:
             text = "%d %d" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
@@ -112,7 +113,7 @@ class PyBoy():
             argMax = np.argsort(self.mb.cpu.hitRate)
             for n in argMax[::-1]:
                 if self.mb.cpu.hitRate[n] != 0:
-                    print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n])
+                    print("%3x %16s %s" % (n, CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n]))
 
 
     ###########################

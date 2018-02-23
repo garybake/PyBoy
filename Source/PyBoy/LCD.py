@@ -5,9 +5,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import CoreDump
-from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
-import numpy
+import numpy as np
+
+from .RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
@@ -18,10 +18,14 @@ BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, Win
 # ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
 
 gameboyResolution = (160, 144)
-colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
+colorPalette = (0x00FFFFFF,
+                0x00999999,
+                0x00555555,
+                0x00000000)
 alphaMask = 0x7F000000
 
-def getColorCode(byte1,byte2,offset):
+
+def getColorCode(byte1, byte2, offset):
     # The colors are 2 bit and are found like this:
     #
     # Color of the first pixel is 0b10
@@ -29,7 +33,8 @@ def getColorCode(byte1,byte2,offset):
     # v v
     # 1 0 0 1 0 0 0 1 <- byte1
     # 0 1 1 1 1 1 0 0 <- byte2
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
+    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)  # 2bit color code
+
 
 class LCD():
     def __init__(self, MB):
@@ -38,14 +43,14 @@ class LCD():
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
 
-        self.tileCache = numpy.ndarray((384 * 8, 8), dtype='int32')
+        self.tileCache = np.ndarray((384 * 8, 8), dtype='int32')
 
         self.VRAM = allocateRAM(VIDEO_RAM)
         self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
 
         # TODO: Find a more optimal way to do this
-        self.spriteCacheOBP0 = numpy.ndarray((384 * 8, 8), dtype='int32')
-        self.spriteCacheOBP1 = numpy.ndarray((384 * 8, 8), dtype='int32')
+        self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='int32')
+        self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='int32')
 
         self.LCDC = LCDCRegister(0)
         self.BGP = PaletteRegister(0xFC, self)
@@ -69,17 +74,17 @@ class LCD():
     def refreshTileDataAdaptive(self):
         if self.clearCache:
             self.tilesChanged.clear()
-            for x in xrange(0x8000,0x9800,16):
+            for x in xrange(0x8000, 0x9800, 16):
 
                 self.tilesChanged.add(x)
             self.clearCache = False
 
         for t in self.tilesChanged:
-            for k in xrange(0, 16 ,2): #2 bytes for each line
+            for k in xrange(0, 16, 2):  # 2 bytes for each line
                 byte1 = self.mb[t+k]
                 byte2 = self.mb[t+k+1]
 
-                for pixelOnLine in xrange(7,-1,-1):
+                for pixelOnLine in xrange(7, -1, -1):
                     y = k/2
                     x = (t - 0x8000)/2 + 7-pixelOnLine
 
@@ -89,11 +94,12 @@ class LCD():
                     # TODO: Find a more optimal way to do this
                     alpha = 0x00000000
                     if colorCode == 0:
-                        alpha = alphaMask # Add alpha channel
+                        alpha = alphaMask  # Add alpha channel
                     self.spriteCacheOBP0[x, y] = self.OBP0.getColor(colorCode) + alpha
                     self.spriteCacheOBP1[x, y] = self.OBP1.getColor(colorCode) + alpha
 
         self.tilesChanged.clear()
+
 
 class PaletteRegister():
     def __init__(self, value, lcd):
@@ -102,11 +108,11 @@ class PaletteRegister():
         self.set(value)
 
     def set(self, value):
-        if self.value == value: # Pokemon Blue continously sets this without changing the value
+        if self.value == value:  # Pokemon Blue continously sets this without changing the value
             return
 
         self.value = value
-        self.lookup = [(value >> x) & 0b11 for x in xrange(0,8,2)]
+        self.lookup = [(value >> x) & 0b11 for x in xrange(0, 8, 2)]
         self.lcd.clearCache = True
 
     def getColor(self, i):
@@ -116,6 +122,7 @@ class PaletteRegister():
     def getCode(self, i):
         return self.lookup[i]
 
+
 class LCDCRegister():
     def __init__(self, value):
         self.set(value)
@@ -124,12 +131,11 @@ class LCDCRegister():
         self.value = value
 
         # No need to convert to bool. Any non-zero value is evaluated as True
-        self.enabled             = value & (1 << 7)
-        self.windowMapSelect     = value & (1 << 6)
-        self.windowEnabled       = value & (1 << 5)
-        self.tileSelect          = value & (1 << 4)
+        self.enabled = value & (1 << 7)
+        self.windowMapSelect = value & (1 << 6)
+        self.windowEnabled = value & (1 << 5)
+        self.tileSelect = value & (1 << 4)
         self.backgroundMapSelect = value & (1 << 3)
-        self.spriteSize          = value & (1 << 2)
-        self.spriteEnable        = value & (1 << 1)
-        self.backgroundEnable    = value & (1 << 0)
-
+        self.spriteSize = value & (1 << 2)
+        self.spriteEnable = value & (1 << 1)
+        self.backgroundEnable = value & (1 << 0)
