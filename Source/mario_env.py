@@ -12,6 +12,7 @@ import random
 # from Debug import Debug
 from PyBoy import PyBoy
 from PyBoy.GameWindow import SdlGameWindow as Window
+# from PyBoy.GameWindow import DummyGameWindow as Window
 
 from PyBoy.WindowEvent import WindowEvent
 from PyBoy.Logger import logger
@@ -37,7 +38,7 @@ class MarioEnv:
     # Looks like normal walk updates every 5 ticks
     max_x_steps = 20
 
-    def __init__(self, rom_file, state_file, scale=2):
+    def __init__(self, rom_file, state_file, scale=1):
         """
         Initialise the environment
         TODO: This should create the pyboy instance
