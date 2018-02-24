@@ -25,13 +25,13 @@ class DummyGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0], 4), dtype='uint8')
 
-    def dump(self,filename):
+    def dump(self, filename):
         pass
 
-    def setTitle(self,title):
-        logger.info("DummyWindow set title: %s" % title)
+    def setTitle(self, title):
+        pass
 
     def getEvents(self):
         return []
@@ -54,3 +54,20 @@ class DummyGameWindow(AbstractGameWindow):
     def blankScreen(self):
         pass
 
+    def refreshTileView1(self, lcd):
+        pass
+
+    def refreshTileView2(self, lcd):
+        pass
+
+    def refreshSpriteView(self, lcd):
+        pass
+
+    def drawTileCacheView(self, lcd):
+        pass
+
+    def drawTileView1ScreenPort(self, lcd):
+        pass
+
+    def drawTileView2WindowPort(self, lcd):
+        pass

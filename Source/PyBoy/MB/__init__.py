@@ -12,12 +12,12 @@ from .. import CPU, RAM, Cartridge, BootROM, LCD, Interaction, Timer, CoreDump
 
 
 class Motherboard():
-    from MemoryManager import __getitem__, __setitem__, transferDMAtoOAM, get_mem_array, read_word
-    from StateManager import saveState, loadState
-    from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
+    from .MemoryManager import __getitem__, __setitem__, transferDMAtoOAM, get_mem_array, read_word
+    from .StateManager import saveState, loadState
+    from .Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from ..CPU.flags import TIMER
 
-    def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
+    def __init__(self, gameROMFile, bootROMFile, window, profiling=False, debugger=None):
         if bootROMFile is not None:
             logger.info("Boot-ROM file provided")
 

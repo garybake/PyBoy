@@ -9,29 +9,32 @@ STAT = 0xFF41
 LY = 0xFF44
 LYC = 0xFF45
 
-def setSTATMode(self,mode):
-    self[STAT] &= 0b11111100 # Clearing 2 LSB
-    self[STAT] |= mode # Apply mode to LSB
 
-    if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
+def setSTATMode(self, mode):
+    self[STAT] &= 0b11111100  # Clearing 2 LSB
+    self[STAT] |= mode  # Apply mode to LSB
+
     # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
+    if self.cpu.testRAMRegisterFlag(STAT, mode+3) and mode != 3:  # Mode "3" is not interruptable
         self.cpu.setInterruptFlag(self.cpu.LCDC)
+
 
 def checkLYC(self, y):
     self[LY] = y
     if self[LYC] == y:
-        self[STAT] |= 0b100 # Sets the LYC flag
+        self[STAT] |= 0b100  # Sets the LYC flag
         if self[STAT] & 0b01000000:
             self.cpu.setInterruptFlag(self.cpu.LCDC)
     else:
         self[STAT] &= 0b11111011
+
 
 def calculateCycles(self, x):
     while x > 0:
         cycles = self.cpu.tick()
 
         # TODO: Benchmark whether 'if' and 'try/except' is better
-        if cycles == -1: # CPU has HALTED
+        if cycles == -1:  # CPU has HALTED
             # Fast-forward to next interrupt:
             # VBLANK and LCDC are covered by just returning.
             # Timer has to be determined.
@@ -46,11 +49,12 @@ def calculateCycles(self, x):
 
             # Profiling
             if self.cpu.profiling:
-                self.cpu.hitRate[0x76] += cycles/4
+                self.cpu.hitRate[0x76] += cycles // 4
 
         x -= cycles
         if self.timer.tick(cycles):
             self.cpu.setInterruptFlag(self.TIMER)
+
 
 def tickFrame(self):
     lcdEnabled = self.lcd.LCDC.enabled
@@ -67,7 +71,7 @@ def tickFrame(self):
 
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
-        for y in xrange(144):
+        for y in range(144):
             self.checkLYC(y)
 
             # Mode 2
@@ -77,7 +81,7 @@ def tickFrame(self):
             self.setSTATMode(3)
             self.calculateCycles(170)
 
-            self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
+            self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos())  # Just recording states of LCD registers
 
             # Mode 0
             self.setSTATMode(0)
@@ -85,10 +89,10 @@ def tickFrame(self):
 
         self.cpu.setInterruptFlag(self.cpu.VBlank)
 
-        self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+        self.MainWindow.renderScreen(self.lcd)  # Actually render screen from scanline parameters
 
         # Wait for next frame
-        for y in xrange(144,154):
+        for y in range(144, 154):
             self.checkLYC(y)
 
             # Mode 1
@@ -101,7 +105,5 @@ def tickFrame(self):
         self.setSTATMode(0)
         self[LY] = 0
 
-        for y in xrange(154):
+        for y in range(154):
             self.calculateCycles(456)
-
-

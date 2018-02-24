@@ -49,20 +49,20 @@ def loadState(self, filename):
     with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
-        self.cpu.AF, self.cpu.BC, self.cpu.DE,\
-        self.cpu.HL, self.cpu.SP, self.cpu.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in xrange(6)]
+        self.cpu.AF, self.cpu.BC, self.cpu.DE, \
+        self.cpu.HL, self.cpu.SP, self.cpu.PC = [ord(f.read(1)) | (ord(f.read(1)) << 8) for _ in range(6)]
 
         self.cpu.interruptMasterEnable = ord(f.read(1))
         self.cpu.halted = ord(f.read(1))
         self.cpu.stopped = ord(f.read(1))
         self.bootROMEnabled = ord(f.read(1))
 
-        self.lcd.VRAM[:]              = [ord(f.read(1)) for _ in self.lcd.VRAM]
-        self.ram.internalRAM0[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM0]
-        self.lcd.OAM[:]               = [ord(f.read(1)) for _ in self.lcd.OAM]
+        self.lcd.VRAM[:] = [ord(f.read(1)) for _ in self.lcd.VRAM]
+        self.ram.internalRAM0[:] = [ord(f.read(1)) for _ in self.ram.internalRAM0]
+        self.lcd.OAM[:] = [ord(f.read(1)) for _ in self.lcd.OAM]
         self.ram.nonIOInternalRAM0[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM0]
-        self.ram.IOPorts[:]           = [ord(f.read(1)) for _ in self.ram.IOPorts]
-        self.ram.internalRAM1[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM1]
+        self.ram.IOPorts[:] = [ord(f.read(1)) for _ in self.ram.IOPorts]
+        self.ram.internalRAM1[:] = [ord(f.read(1)) for _ in self.ram.internalRAM1]
         self.ram.nonIOInternalRAM1[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM1]
         self.ram.interruptRegister[:] = [ord(f.read(1)) for _ in self.ram.interruptRegister]
 

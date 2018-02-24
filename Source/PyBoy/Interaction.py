@@ -4,17 +4,18 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from WindowEvent import WindowEvent
-import CoreDump
+from .WindowEvent import WindowEvent
 
-P10, P11, P12, P13, P14, P15 = range(0,6)
+P10, P11, P12, P13, P14, P15 = range(0, 6)
 
 
 def resetBit(x, bit):
     return x & ~(1 << bit)
 
+
 def setBit(x, bit):
     return x | (1 << bit)
+
 
 class Interaction():
     def __init__(self):
@@ -39,7 +40,6 @@ class Interaction():
             self.standard = resetBit(self.standard, P12)
         elif key == WindowEvent.PressButtonStart:
             self.standard = resetBit(self.standard, P13)
-
 
         elif key == WindowEvent.ReleaseArrowRight:
             self.directional = setBit(self.directional, P10)
@@ -72,7 +72,7 @@ class Interaction():
         # Bit 1 - P11 in port
         # Bit 0 - P10 in port
 
-        joystickByte = 0xFF & (joystickByte | 0b11001111) # Guess to make first 4 and last 2 bits true, while keeping selected bits
+        joystickByte = 0xFF & (joystickByte | 0b11001111)  # Guess to make first 4 and last 2 bits true, while keeping selected bits
 
         if P14 == 1 and P15 == 1:
             pass

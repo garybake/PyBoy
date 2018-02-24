@@ -10,14 +10,16 @@ class FrameBuffer(object):
         """
         """
         if not hasattr(array, '__getitem__') or not hasattr(array, '__setitem__'):
-            raise AttributeError('Input array is missing attributes __getitem__'\
-                    'and __setitem__')
+            raise AttributeError(
+                'Input array is missing attributes __getitem__',
+                'and __setitem__')
         if not isinstance(scaleFactor, int):
             raise TypeError('ScaleFactor must be an integer')
         self._array = array
         self._scaleFactor = scaleFactor
+        print('---')
 
-        self._cache = np.zeros(tuple(x / scaleFactor for x in array.shape), dtype=np.uint32)
+        self._cache = np.zeros(tuple(x // scaleFactor for x in array.shape), dtype=np.uint32)
 
     def fill(self, val):
         self._cache.fill(val)
@@ -36,12 +38,13 @@ class FrameBuffer(object):
         """Set FrameBuffer item at index"""
         self._cache[key] = item
 
+
 class ScaledFrameBuffer(FrameBuffer):
 
     def update(self):
-        for (x, y),_ in np.ndenumerate(self._array):
-            self._array[x, y] = self._cache[x/self._scaleFactor,
-                    y/self._scaleFactor]
+        for (x, y), _ in np.ndenumerate(self._array):
+            self._array[x, y] = self._cache[x // self._scaleFactor, y // self._scaleFactor]
+
 
 class SimpleFrameBuffer(FrameBuffer):
 

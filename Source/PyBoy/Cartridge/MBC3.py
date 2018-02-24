@@ -5,9 +5,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 from .. import CoreDump
-from GenericMBC import GenericMBC
+from .GenericMBC import GenericMBC
 
 from ..Logger import logger
+
 
 class MBC3(GenericMBC):
     def __setitem__(self, address, value):
@@ -43,4 +44,3 @@ class MBC3(GenericMBC):
                 raise CoreDump.CoreDump("Invalid RAM bank selected: 0x%0.2x" % self.RAMBankSelected)
         else:
             raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x" % address)
-

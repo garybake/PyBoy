@@ -7,6 +7,7 @@
 
 import struct
 
+
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:

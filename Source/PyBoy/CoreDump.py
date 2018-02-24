@@ -4,9 +4,10 @@ RAM = None
 CPU = None
 windowHandle = None
 
+
 class CoreDump(Exception):
     def __init__(self, message):
-        print "TODO: Fix CoreDump.\n",message
+        print("TODO: Fix CoreDump.\n {}".format(message))
         exit(1)
         super(CoreDump, self).__init__(message)
 
@@ -20,7 +21,6 @@ class CoreDump(Exception):
         dump += "CPU.stopped: " + str(CPU.stopped) + "\n"
         dump += "CPU.breakOn: " + str(CPU.breakOn) + "\n"
         dump += "CPU.debugCallStack: " + str(CPU.debugCallStack) + "\n"
-
 
         instruction = None
         try:

@@ -7,6 +7,7 @@
 
 from ..MathUint8 import getSignedInt8
 
+
 class TileView():
     def __init__(self, lcd, high_tile_data=False):
         self.VRAM = lcd.VRAM
@@ -20,6 +21,3 @@ class TileView():
             return getSignedInt8(self.VRAM[self.view_offset+x+y*32])
         else:
             return self.VRAM[self.view_offset+x+y*32]
-
-
-

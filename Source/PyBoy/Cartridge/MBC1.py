@@ -6,7 +6,8 @@
 #
 from .. import CoreDump
 from ..Logger import logger
-from GenericMBC import GenericMBC
+from .GenericMBC import GenericMBC
+
 
 class MBC1(GenericMBC):
     def __setitem__(self, address, value):
@@ -47,4 +48,3 @@ class MBC1(GenericMBC):
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
             raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
-

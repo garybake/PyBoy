@@ -118,7 +118,7 @@ def transferDMAtoOAM(self, src, dst=0xFE00):
     # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
     # TODO: Add timing delay of 160µs and disallow access to RAM!
     offset = src * 0x100
-    for n in xrange(0x00, 0xA0):
+    for n in range(0x00, 0xA0):
         self.__setitem__(dst + n, self.__getitem__(n + offset))
 
 
