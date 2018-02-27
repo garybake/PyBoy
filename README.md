@@ -2,6 +2,21 @@
  - Changes by me to the original PyBoy to support reinforcement learning
  - If I can get it to vaguely play mario I'll be happy
 
+## Update 2
+Currently stuck at an impass
+
+Python 2&3 are too slow to do anything meaningful
+
+Pypy isn't expected to support tensorflow until at least March (if at all)
+https://morepypy.blogspot.co.uk/2018/01/leysin-winter-sprint-17-24-march-2018.html
+
+I may try perf tune the the python3 version but I don't think I can get the gains needed in pure python.
+
+## Update 1
+ - Works with python 3
+ - Basic OpenAI gym setup
+
+
 # PyBoy
 
 It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
