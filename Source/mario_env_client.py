@@ -1,32 +1,17 @@
-# # This is the code that visits the warehouse.
-# import Pyro4
-# # from person import Person
-
-# uri = input("Enter the uri of the instance: ").strip()
-# mario_env = Pyro4.Proxy(uri)
-
-# # psf = Pyro4.Proxy("PYRONAME:MyApp.Factories.ProductFactory")
-# print(mario_env.action_space_sample())
-# # janet = Person("Janet")
-# # henry = Person("Henry")
-# # janet.visit(warehouse)
-# # henry.visit(warehouse)
-
-
 #! /usr/local/bin/python3
 
 # Mario Bot
 # Reinforcement Learning with Mario
 
 import traceback
-import os
+import logging
 import sys
+import random
 
 import Pyro4
+from PIL import Image
+import numpy as np
 
-from PyBoy.Logger import logger
-
-from mario_env import MarioEnv
 
 MAX_ITERATIONS = 3
 
@@ -35,28 +20,60 @@ ACTION_RIGHT = 3
 ACTION_LEFT = 7
 
 stop_at_frame = -1
+logger = logging.getLogger('CLIENT')
 
 
 def basic_policy(obs):
-    mario_x = obs[0]
-    if mario_x < 4000:
+    return random_policy(obs)
+    # mario_x = obs[0]
+    # if mario_x < 4000:
+    #     return ACTION_RIGHT
+    # return ACTION_LEFT
+
+
+def random_policy(obs):
+    if bool(random.getrandbits(1)):
         return ACTION_RIGHT
     return ACTION_LEFT
 
+policy_func = basic_policy
+
+
+def array_to_png(screen, filename):
+    """
+    Convert the raw screen array to a png
+    """
+    # im = Image.fromarray(np.array(screen, dtype=np.int32))
+    screen[screen == 1] = 16777215
+    im = Image.fromarray(screen)
+    im.save('/tmp/marioimage.png')
+    flat_list = [item for sublist in screen for item in sublist]
+    print(set(flat_list))
+
+
+def preprocess_observation(obs):
+    screen = np.array(obs, dtype=np.int32)
+    print(screen[0][-10:])
+    screen[screen == 10066329] = 0
+    screen[screen == 5592405] = 0
+    screen[screen == 0] = 0
+    screen[screen == 16777215] = 1
+
+    print(screen[0][-10:])
+    screen = np.transpose(screen)
+    return screen
+
 
 def main():
-    # rom_file = os.path.join('ROMs', 'mario.gb')
-    # state_file = os.path.join('saveStates', 'mario_save')
     env = None
 
     try:
 
         logger.info('Starting environment')
-        # env = MarioEnv(rom_file, state_file)
-        # uri = 'PYRO:example.marioenv@localhost:43047'
         uri = "PYRO:marioenv@localhost:9999"
         env = Pyro4.Proxy(uri)
-        # env.reset()
+        env.start_pyboy()
+
     except Exception as e:
         logger.error('Failed to start environment')
         logger.error(e)
@@ -65,21 +82,26 @@ def main():
 
     totals = []
     try:
-        for episode in range(4):
+        for episode in range(1):
             episode_rewards = 0
             obs = env.reset()
 
-            for step in range(100):  # 500 steps max
-                action = basic_policy(obs)
+            for step in range(52):  # 500 steps max
+                action = policy_func(obs)
                 obs, reward, done, _ = env.step(action=action)
 
                 if step % 10 == 0:
                     logger.debug('reward: {}, obs: {}'.format(reward, obs))
+                if step == 50:
+                    # screen = env.get_screen()
+                    screen = preprocess_observation(obs)
+                    array_to_png(screen, '/tmp/mario_screen.png')
 
                 episode_rewards += reward
                 if done:
                     break
             totals.append(episode_rewards)
+            logger.error('Episode total reward: {}'.format(episode_rewards))
 
     except KeyboardInterrupt:
         print("Interrupted by keyboard")
@@ -88,8 +110,9 @@ def main():
         logger.error(e)
         traceback.print_exc()
 
-    logger.info('Totals: {}'.format(totals))
-    env.stop()
+    logger.debug('Totals: {}'.format(totals))
+    env.shutdown()
+    env._pyroRelease()
 
 if __name__ == "__main__":
     # import cProfile

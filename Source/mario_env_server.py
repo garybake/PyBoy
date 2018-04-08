@@ -9,12 +9,15 @@ Notes
 """
 import random
 import os
+import sys
+import uuid
 
 import Pyro4
 
 # from Debug import Debug
 from PyBoy import PyBoy
 from PyBoy.GameWindow import SdlGameWindow as Window
+# import sdl2
 # from PyBoy.GameWindow import DummyGameWindow as Window
 
 from PyBoy.WindowEvent import WindowEvent
@@ -43,7 +46,7 @@ class MarioEnv:
     # Looks like normal walk updates every 5 ticks
     max_x_steps = 20
 
-    def __init__(self, rom_file=None, state_file=None, scale=1):
+    def __init__(self, rom_file=None, state_file=None, scale=1, daemon=None):
         """
         Initialise the environment
         TODO: This should create the pyboy instance
@@ -53,13 +56,17 @@ class MarioEnv:
         :param int scale: Scale size of window
         """
         # TODO how to pass in parameters with pyro?
+        self.daemon = daemon
+        self.scale = scale
+
         if not rom_file:
-            rom_file = os.path.join('ROMs', 'mario.gb')
+            self.rom_file = os.path.join('ROMs', 'mario.gb')
         if not state_file:
-            state_file = os.path.join('saveStates', 'mario_save')
-        print('heeeeere')
-        self.pyboy = PyBoy(Window(scale=scale), rom_file, self.boot_rom)
-        self.state_file = state_file
+            self.state_file = os.path.join('saveStates', 'mario_save')
+
+    def start_pyboy(self):
+
+        self.pyboy = PyBoy(Window(scale=self.scale), self.rom_file, self.boot_rom)
         self.frame = 0
         self.ctrl_left = False
         self.ctrl_right = False
@@ -121,6 +128,18 @@ class MarioEnv:
         v = steps[-1] - steps[0]
         return v
 
+    def get_screen(self):
+        """
+        Returns current screen
+        :return screen??
+        """
+        buffer = self.pyboy.window._screenBuffer._array
+
+        # TODO convert vals to 0-1
+        # [16777215, 10066329, 0, 5592405]
+
+        return buffer.tolist()
+
     def obs(self):
         """
         Get current state of the environment
@@ -129,9 +148,10 @@ class MarioEnv:
         :return: Array of observation values
         :rtype: array
         """
-        mario_x = self._mario_x
-        mario_v = self._get_avg_speed()
-        return [mario_x, mario_v]
+        # mario_x = self._mario_x
+        # mario_v = self._get_avg_speed()
+        # return [mario_x, mario_v]
+        return self.get_screen()
 
     def get_reward(self):
         """
@@ -217,26 +237,25 @@ class MarioEnv:
         """
         return (1)
 
-    def stop(self):
+    @Pyro4.oneway   # in case call returns much later than daemon.shutdown
+    def shutdown(self):
         """
         Stop the environment
         """
-        # TODO: It used the same instance when ran a second time and crashes?
+        print('shutting down...')
         self.pyboy.stop(save=False)
-
-    def factory():
-        return MarioEnv()
-
-    factory = staticmethod(factory)
+        self.daemon.shutdown()
 
 
 def main():
-    Pyro4.Daemon.serveSimple(
-            {
-                MarioEnv: "marioenv"
-            },
-            port=9999,
-            ns=False)
+    daemon = Pyro4.Daemon(port=9999)
+    tapi = MarioEnv(daemon=daemon)
+    uri = daemon.register(tapi, objectId='marioenv')
+    print('Server started: {}'.format(uri))
+    daemon.requestLoop()
+    print('exited requestLoop')
+    daemon.close()
+    print('daemon closed')
 
 if __name__ == "__main__":
     main()
