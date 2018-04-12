@@ -161,7 +161,12 @@ class MarioEnv:
         :return: Reward
         :rtype: int
         """
-        return self._mario_x
+        if self.game_over:
+            return -100.
+        if self.ctrl_right:
+            return 1.0
+        return 0.
+        # return self._mario_x
 
     def _get_action_outcome(self):
         """
@@ -170,15 +175,15 @@ class MarioEnv:
         :return: Outcome - state, reward, done, info
         :rtype: tuple
         """
-        game_over = False
+        self.game_over = False
         if (self.frame > 10) and not self.pyboy.getSprite(3).is_on_screen():
-            game_over = True
+            self.game_over = True
             logger.debug('Mario death')
 
         outcome = [
             self.obs(),  # state
             self.get_reward(),  # reward
-            game_over,  # Game over
+            self.game_over,  # Game over
             None  # Debug info
         ]
         return outcome
@@ -202,8 +207,10 @@ class MarioEnv:
             elif action == ACTION_RIGHT:
                 self.pyboy.sendInput([WindowEvent.PressArrowRight])
                 self.ctrl_right = True
+                self.ctrl_left = False
             elif action == ACTION_LEFT:
                 self.pyboy.sendInput([WindowEvent.PressArrowLeft])
+                self.ctrl_right = False
                 self.ctrl_left = True
 
         stop = self.pyboy.tick()

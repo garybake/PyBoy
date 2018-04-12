@@ -7,6 +7,7 @@ import traceback
 import logging
 import sys
 import random
+import json
 from collections import deque
 
 import Pyro4
@@ -32,10 +33,15 @@ IMG_CHANNELS = 4  # We stack 4 frames
 
 INITIAL_EPSILON = 0.0001
 FRAME_PER_ACTION = 1
-OBSERVATIONS_BEFORE_TRAINING = 100
+OBSERVATIONS_BEFORE_TRAINING = 50
 INITIAL_EPSILON = 0.1
 FINAL_EPSILON = 0.0001  # final value of epsilon
+GAMMA = 0.99  # decay rate of past observations
 EXPLORE = 3000000.  # frames over which to anneal epsilon
+REPLAY_MEMORY_SIZE = 50000
+BATCH_SIZE = 32
+EXPLORE = 3000000  # frames over which to anneal epsilon TODO
+
 
 def basic_policy(obs):
     return random_policy(obs)
@@ -103,7 +109,7 @@ def buildmodel():
     model.add(layers.Flatten())
     model.add(layers.Dense(512))
     model.add(layers.Activation('relu'))
-    model.add(layers.Dense(2))
+    model.add(layers.Dense(3))
 
     adam = Adam(lr=1e-6)
     model.compile(
@@ -111,6 +117,20 @@ def buildmodel():
         optimizer=adam)
     print("We finish building the model")
     return model
+
+
+def translate_action(action_arr):
+    """
+    Translates from an action array to a single action
+    [L, None, R]
+    """
+    # TODO I don't think we need this
+
+    if action_arr[0]:
+        return ACTION_LEFT
+    if action_arr[2]:
+        return ACTION_RIGHT
+    return ACTION_NONE
 
 
 def main():
@@ -170,27 +190,23 @@ def main():
 
 def train_network(model, env, args):
     # open up a game state to communicate with emulator
-    # game_state = game.GameState()
-    game_state = preprocess_observation(env.reset())
+    game_state_t0 = preprocess_observation(env.reset())
+    # TODO do we need to process this?
 
     # store the previous observations in replay memory
     replay_mem = deque()
 
     # get the first state by doing nothing and preprocess the image to 80x80x4
     do_nothing = np.zeros(NUM_ACTIONS)
-    do_nothing[0] = 1
-    # x_t, r_0, terminal = game_state.frame_step(do_nothing)
+    do_nothing[1] = 1.
+    print(do_nothing)
 
-    # x_t = skimage.color.rgb2gray(x_t)
-    # x_t = skimage.transform.resize(x_t,(80,80))
-    # x_t = skimage.exposure.rescale_intensity(x_t,out_range=(0,255))
+    obs, _, _, _ = env.step(action=translate_action(do_nothing))
+    game_state_t0 = preprocess_observation(obs)
 
-    # s_t = np.stack((x_t, x_t, x_t, x_t), axis=0)
+    state_stack = np.stack((game_state_t0, game_state_t0, game_state_t0, game_state_t0), axis=0)
 
-    #In Keras, need to reshape
-    # s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])
-    state_stack = np.stack((game_state, game_state, game_state, game_state), axis=0)
-
+    # TODO why do we need to reshape in Kera?
     state_stack = state_stack.reshape(1, state_stack.shape[0], state_stack.shape[1], state_stack.shape[2])
     print(state_stack.shape)
     # # if args['mode'] == 'Run':
@@ -206,7 +222,7 @@ def train_network(model, env, args):
     epsilon = INITIAL_EPSILON
 
     tick = 0
-    while tick < 10:
+    while tick < 300:
     # while (True):
         loss = 0
         q_max = 0
@@ -221,84 +237,83 @@ def train_network(model, env, args):
                 action_index = random.randrange(NUM_ACTIONS)
                 action[action_index] = 1
             else:
-                q = model.predict(state_stack)  # input a stack of 4 images, get the prediction
+                # input a stack of 4 images, get the prediction
+                q = model.predict(state_stack)
                 max_Q = np.argmax(q)
                 action_index = max_Q
                 action[max_Q] = 1
-
-            print(action)
 
         # We reduced the epsilon gradually
         if epsilon > FINAL_EPSILON and tick > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-    #     #run the selected action and observed next state and reward
-    #     x_t1_colored, reward, terminal = game_state.frame_step(action)
+        # run the selected action and observed next state and reward
+        obs, reward, done, terminal = env.step(action=translate_action(action))
+        game_state_t1 = preprocess_observation(obs)
 
-    #     x_t1 = skimage.color.rgb2gray(x_t1_colored)
-    #     x_t1 = skimage.transform.resize(x_t1,(80,80))
-    #     x_t1 = skimage.exposure.rescale_intensity(x_t1, out_range=(0, 255))
+        game_state_t1 = game_state_t1.reshape(
+            1, 1, game_state_t1.shape[0], game_state_t1.shape[1])
+        state_stack_t1 = np.append(
+            game_state_t1, state_stack[:, :3, :, :], axis=1)
 
-    #     x_t1 = x_t1.reshape(1, 1, x_t1.shape[0], x_t1.shape[1])
-    #     s_t1 = np.append(x_t1, s_t[:, :3, :, :], axis=1)
+        # store the transition in D
+        replay_mem.append(
+            (state_stack, action_index, reward, state_stack_t1, terminal))
+        if len(replay_mem) > REPLAY_MEMORY_SIZE:
+            replay_mem.popleft()
 
-    #     # store the transition in D
-    #     D.append((s_t, action_index, reward, s_t1, terminal))
-    #     if len(D) > REPLAY_MEMORY:
-    #         D.popleft()
+        # only train if done observing
+        if tick > OBSERVATIONS_BEFORE_TRAINING:
+            # sample a minibatch to train on
+            minibatch = random.sample(replay_mem, BATCH_SIZE)
 
-    #     #only train if done observing
-    #     if t > OBSERVE:
-    #         #sample a minibatch to train on
-    #         minibatch = random.sample(D, BATCH)
+            inputs = np.zeros((BATCH_SIZE, state_stack.shape[1], state_stack.shape[2], state_stack.shape[3]))   # 32, 80, 80, 4
+            targets = np.zeros((inputs.shape[0], NUM_ACTIONS))  # 32, 2
 
-    #         inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
-    #         targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
+            # Now we do the experience replay
+            for i in range(0, len(minibatch)):
+                state_t = minibatch[i][0]
+                action_t = minibatch[i][1]  # This is action index
+                reward_t = minibatch[i][2]
+                state_t1 = minibatch[i][3]
+                terminal = minibatch[i][4]
+                # if terminated, only equals reward
 
-    #         #Now we do the experience replay
-    #         for i in range(0, len(minibatch)):
-    #             state_t = minibatch[i][0]
-    #             action_t = minibatch[i][1]   #This is action index
-    #             reward_t = minibatch[i][2]
-    #             state_t1 = minibatch[i][3]
-    #             terminal = minibatch[i][4]
-    #             # if terminated, only equals reward
+                inputs[i:i + 1] = state_t    # I saved down state_stack
 
-    #             inputs[i:i + 1] = state_t    #I saved down s_t
+                targets[i] = model.predict(state_t)  # Hitting each buttom probability
+                q_max = model.predict(state_t1)
 
-    #             targets[i] = model.predict(state_t)  # Hitting each buttom probability
-    #             q_max = model.predict(state_t1)
+                if terminal:
+                    targets[i, action_t] = reward_t
+                else:
+                    targets[i, action_t] = reward_t + GAMMA * np.max(q_max)
 
-    #             if terminal:
-    #                 targets[i, action_t] = reward_t
-    #             else:
-    #                 targets[i, action_t] = reward_t + GAMMA * np.max(q_max)
+            # targets2 = normalize(targets)
+            loss += model.train_on_batch(inputs, targets)
 
-    #         # targets2 = normalize(targets)
-    #         loss += model.train_on_batch(inputs, targets)
-
-    #     s_t = s_t1
+        state_stack = state_stack_t1
         tick += 1
 
-    #     # save progress every 10000 iterations
-    #     if t % 100 == 0:
-    #         print("Now we save model")
-    #         model.save_weights("model.h5", overwrite=True)
-    #         with open("model.json", "w") as outfile:
-    #             json.dump(model.to_json(), outfile)
+        # save progress every 10000 iterations
+        if tick % 100 == 0:
+            print("Now we save model")
+            model.save_weights("model.h5", overwrite=True)
+            with open("model.json", "w") as outfile:
+                json.dump(model.to_json(), outfile)
 
-    #     # print info
-    #     state = ""
-    #     if t <= OBSERVE:
-    #         state = "observe"
-    #     elif t > OBSERVE and t <= OBSERVE + EXPLORE:
-    #         state = "explore"
-    #     else:
-    #         state = "train"
+        # print info
+        state = ""
+        if tick <= OBSERVATIONS_BEFORE_TRAINING:
+            state = "observe"
+        elif tick > OBSERVATIONS_BEFORE_TRAINING and tick <= OBSERVATIONS_BEFORE_TRAINING + EXPLORE:
+            state = "explore"
+        else:
+            state = "train"
 
-    #     print("TIMESTEP", t, "/ STATE", state, \
-    #         "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", reward, \
-    #         "/ Q_MAX " , np.max(q_max), "/ Loss ", loss)
+        print("TIMESTEP", tick, "| STATE", state,
+            "| EPSILON", epsilon, "| ACTION", action_index, "| REWARD", reward,
+            "| Q_MAX ", np.max(q_max), "/ Loss ", loss)
 
     print("Episode finished!")
     print("************************")
