@@ -7,7 +7,8 @@ mario_server () {
 
 mario_client () {
     sleep 1
-    python3 mario_env_client.py
+    python3 mario_env_client.py -m train
+    # python3 mario_env_client.py -m run
 }
 
 mario_server &

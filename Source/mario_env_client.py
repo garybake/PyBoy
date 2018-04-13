@@ -8,6 +8,7 @@ import logging
 import sys
 import random
 import json
+import argparse
 from collections import deque
 
 import Pyro4
@@ -133,7 +134,7 @@ def translate_action(action_arr):
     return ACTION_NONE
 
 
-def main():
+def main(args):
     env = None
 
     try:
@@ -145,7 +146,7 @@ def main():
 
         model = buildmodel()
         print(model.summary())
-        train_network(model, env, args=None)
+        train_network(model, env, args=args)
 
     except Exception as e:
         logger.error('Failed to start environment')
@@ -209,20 +210,24 @@ def train_network(model, env, args):
     # TODO why do we need to reshape in Kera?
     state_stack = state_stack.reshape(1, state_stack.shape[0], state_stack.shape[1], state_stack.shape[2])
     print(state_stack.shape)
-    # # if args['mode'] == 'Run':
-    # #     OBSERVE = 999999999    #We keep observe, never train
-    # #     epsilon = FINAL_EPSILON
-    # #     print ("Now we load weight")
-    # #     model.load_weights("model.h5")
-    # #     adam = Adam(lr=1e-6)
-    # #     model.compile(loss='mse',optimizer=adam)
-    # #     print ("Weight load successfully")
-    # # else:                       #We go to training mode
-    OBSERVE = OBSERVATIONS_BEFORE_TRAINING
-    epsilon = INITIAL_EPSILON
+    if args['mode'] == 'run':
+        mode = 'run'
+        # We keep observe, never train
+        OBSERVE = 999999999
+        epsilon = FINAL_EPSILON
+        print ("Now we load weight")
+        model.load_weights("model.h5")
+        adam = Adam(lr=1e-6)
+        model.compile(loss='mse', optimizer=adam)
+        print ("Weight load successfully")
+    else:
+        # We go to training mode
+        mode = 'train'
+        OBSERVE = OBSERVATIONS_BEFORE_TRAINING
+        epsilon = INITIAL_EPSILON
 
     tick = 0
-    while tick < 300:
+    while tick < 500:
     # while (True):
         loss = 0
         q_max = 0
@@ -256,14 +261,14 @@ def train_network(model, env, args):
         state_stack_t1 = np.append(
             game_state_t1, state_stack[:, :3, :, :], axis=1)
 
-        # store the transition in D
+        # store the transition in the replay memory
         replay_mem.append(
             (state_stack, action_index, reward, state_stack_t1, terminal))
         if len(replay_mem) > REPLAY_MEMORY_SIZE:
             replay_mem.popleft()
 
         # only train if done observing
-        if tick > OBSERVATIONS_BEFORE_TRAINING:
+        if tick > OBSERVATIONS_BEFORE_TRAINING and mode != 'run':
             # sample a minibatch to train on
             minibatch = random.sample(replay_mem, BATCH_SIZE)
 
@@ -296,8 +301,9 @@ def train_network(model, env, args):
         tick += 1
 
         # save progress every 10000 iterations
+        # TODO no need to save in run mode
         if tick % 100 == 0:
-            print("Now we save model")
+            print("Saving model")
             model.save_weights("model.h5", overwrite=True)
             with open("model.json", "w") as outfile:
                 json.dump(model.to_json(), outfile)
@@ -311,9 +317,8 @@ def train_network(model, env, args):
         else:
             state = "train"
 
-        print("TIMESTEP", tick, "| STATE", state,
-            "| EPSILON", epsilon, "| ACTION", action_index, "| REWARD", reward,
-            "| Q_MAX ", np.max(q_max), "/ Loss ", loss)
+        print('T: {} | State: {} | E: {:.8f} | Action: {} | Reward: {} | Q_Max: {:.8f} | Loss: {:.8f}'.format(
+            tick, state, epsilon, action_index, reward, np.max(q_max), loss))
 
     print("Episode finished!")
     print("************************")
@@ -321,7 +326,11 @@ def train_network(model, env, args):
 if __name__ == "__main__":
     # import cProfile
     # cProfile.run('main()')
-    main()
+    parser = argparse.ArgumentParser(description='Mario learnings')
+    parser.add_argument('-m', '--mode', help='train / run', required=True)
+    args = vars(parser.parse_args())
+
+    main(args)
 
 
 # https://github.com/rafalrusin/Keras-FlappyBird/blob/45d010f2adeddb50b659692c247153fca084af36/qlearn.py

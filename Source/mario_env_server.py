@@ -165,6 +165,8 @@ class MarioEnv:
             return -100.
         if self.ctrl_right:
             return 1.0
+        if self.ctrl_left:
+            return -1.0
         return 0.
         # return self._mario_x
 
