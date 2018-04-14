@@ -38,10 +38,10 @@ OBSERVATIONS_BEFORE_TRAINING = 50
 INITIAL_EPSILON = 0.1
 FINAL_EPSILON = 0.0001  # final value of epsilon
 GAMMA = 0.99  # decay rate of past observations
-EXPLORE = 3000000.  # frames over which to anneal epsilon
+# EXPLORE = 3000000.  # frames over which to anneal epsilon
 REPLAY_MEMORY_SIZE = 50000
 BATCH_SIZE = 32
-EXPLORE = 3000000  # frames over which to anneal epsilon TODO
+EXPLORE = 3000  # frames over which to anneal epsilon TODO
 
 
 def basic_policy(obs):
@@ -125,12 +125,13 @@ def translate_action(action_arr):
     Translates from an action array to a single action
     [L, None, R]
     """
-    # TODO I don't think we need this
-
-    if action_arr[0]:
-        return ACTION_LEFT
-    if action_arr[2]:
+    if action_arr[2] > 0.:
+        print('RIGHT')
         return ACTION_RIGHT
+    elif action_arr[0] > 0.:
+        print('LEFT')
+        return ACTION_LEFT
+    print('NONE')
     return ACTION_NONE
 
 
@@ -205,9 +206,9 @@ def train_network(model, env, args):
     obs, _, _, _ = env.step(action=translate_action(do_nothing))
     game_state_t0 = preprocess_observation(obs)
 
-    state_stack = np.stack((game_state_t0, game_state_t0, game_state_t0, game_state_t0), axis=0)
+    state_stack = np.stack((game_state_t0,) * IMG_CHANNELS, axis=0)
 
-    # TODO why do we need to reshape in Kera?
+    # TODO why do we need to reshape in Keras?
     state_stack = state_stack.reshape(1, state_stack.shape[0], state_stack.shape[1], state_stack.shape[2])
     print(state_stack.shape)
     if args['mode'] == 'run':
@@ -227,8 +228,8 @@ def train_network(model, env, args):
         epsilon = INITIAL_EPSILON
 
     tick = 0
-    while tick < 500:
-    # while (True):
+    # while tick < 500:
+    while (True):
         loss = 0
         q_max = 0
         action_index = 0
@@ -244,6 +245,7 @@ def train_network(model, env, args):
             else:
                 # input a stack of 4 images, get the prediction
                 q = model.predict(state_stack)
+                print(q)
                 max_Q = np.argmax(q)
                 action_index = max_Q
                 action[max_Q] = 1
@@ -259,7 +261,7 @@ def train_network(model, env, args):
         game_state_t1 = game_state_t1.reshape(
             1, 1, game_state_t1.shape[0], game_state_t1.shape[1])
         state_stack_t1 = np.append(
-            game_state_t1, state_stack[:, :3, :, :], axis=1)
+            game_state_t1, state_stack[:, :IMG_CHANNELS-1, :, :], axis=1)
 
         # store the transition in the replay memory
         replay_mem.append(
@@ -281,15 +283,15 @@ def train_network(model, env, args):
                 action_t = minibatch[i][1]  # This is action index
                 reward_t = minibatch[i][2]
                 state_t1 = minibatch[i][3]
-                terminal = minibatch[i][4]
+                terminal_t = minibatch[i][4]
                 # if terminated, only equals reward
 
-                inputs[i:i + 1] = state_t    # I saved down state_stack
+                inputs[i:i + 1] = state_t  # I saved down state_stack
 
                 targets[i] = model.predict(state_t)  # Hitting each buttom probability
                 q_max = model.predict(state_t1)
 
-                if terminal:
+                if terminal_t:
                     targets[i, action_t] = reward_t
                 else:
                     targets[i, action_t] = reward_t + GAMMA * np.max(q_max)
@@ -319,6 +321,10 @@ def train_network(model, env, args):
 
         print('T: {} | State: {} | E: {:.8f} | Action: {} | Reward: {} | Q_Max: {:.8f} | Loss: {:.8f}'.format(
             tick, state, epsilon, action_index, reward, np.max(q_max), loss))
+
+        if done:
+            print('--------------------------------------->>>>>>>>>>>>terminal_reset')
+            env.reset()
 
     print("Episode finished!")
     print("************************")

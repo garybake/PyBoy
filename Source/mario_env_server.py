@@ -162,13 +162,24 @@ class MarioEnv:
         :rtype: int
         """
         if self.game_over:
-            return -100.
-        if self.ctrl_right:
-            return 1.0
-        if self.ctrl_left:
-            return -1.0
-        return 0.
+            return -100.  # Don't die
+        # going_right = 0
+        # if self.ctrl_right:
+        #     going_right = 1.0
+        # if self.ctrl_left:
+        #     return -50.0
+        # return 0.
         # return self._mario_x
+        v = self._get_avg_speed()
+        if v > 0:
+            return 1  # Decent v
+        elif self.last_action == ACTION_RIGHT:
+            return 0.5  # Run right on the lhs of the screen
+        elif self.last_action == ACTION_NONE:
+            return -1  # Don't be lazy
+        elif v < 0:
+            return -20  # Try not to go left
+        return 0
 
     def _get_action_outcome(self):
         """
@@ -201,16 +212,21 @@ class MarioEnv:
         :return: Outcome - state, reward, done, info
         :rtype: tuple
         """
-
+        self.last_action = action
         if action:
             self._clear_inputs()
             if action == ACTION_NONE:
+                logger.debug('NONE')
+                self.ctrl_right = False
+                self.ctrl_left = False
                 pass
             elif action == ACTION_RIGHT:
+                logger.debug('RIGHT')
                 self.pyboy.sendInput([WindowEvent.PressArrowRight])
                 self.ctrl_right = True
                 self.ctrl_left = False
             elif action == ACTION_LEFT:
+                logger.debug('LEFT')
                 self.pyboy.sendInput([WindowEvent.PressArrowLeft])
                 self.ctrl_right = False
                 self.ctrl_left = True
