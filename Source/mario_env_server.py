@@ -216,17 +216,14 @@ class MarioEnv:
         if action:
             self._clear_inputs()
             if action == ACTION_NONE:
-                logger.debug('NONE')
                 self.ctrl_right = False
                 self.ctrl_left = False
                 pass
             elif action == ACTION_RIGHT:
-                logger.debug('RIGHT')
                 self.pyboy.sendInput([WindowEvent.PressArrowRight])
                 self.ctrl_right = True
                 self.ctrl_left = False
             elif action == ACTION_LEFT:
-                logger.debug('LEFT')
                 self.pyboy.sendInput([WindowEvent.PressArrowLeft])
                 self.ctrl_right = False
                 self.ctrl_left = True

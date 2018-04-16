@@ -99,7 +99,7 @@ def buildmodel():
     model = Sequential()
     model.add(layers.Convolution2D(
         32, 8, 8, subsample=(4, 4), border_mode='same',
-        input_shape=(IMG_CHANNELS, IMG_ROWS, IMG_COLS)))
+        input_shape=(IMG_ROWS, IMG_COLS, IMG_CHANNELS)))
     model.add(layers.Activation('relu'))
     model.add(layers.Convolution2D(
         64, 4, 4, subsample=(2, 2), border_mode='same'))
@@ -126,12 +126,9 @@ def translate_action(action_arr):
     [L, None, R]
     """
     if action_arr[2] > 0.:
-        print('RIGHT')
         return ACTION_RIGHT
     elif action_arr[0] > 0.:
-        print('LEFT')
         return ACTION_LEFT
-    print('NONE')
     return ACTION_NONE
 
 
@@ -206,7 +203,7 @@ def train_network(model, env, args):
     obs, _, _, _ = env.step(action=translate_action(do_nothing))
     game_state_t0 = preprocess_observation(obs)
 
-    state_stack = np.stack((game_state_t0,) * IMG_CHANNELS, axis=0)
+    state_stack = np.stack((game_state_t0,) * IMG_CHANNELS, axis=2)
 
     # TODO why do we need to reshape in Keras?
     state_stack = state_stack.reshape(1, state_stack.shape[0], state_stack.shape[1], state_stack.shape[2])
@@ -228,7 +225,6 @@ def train_network(model, env, args):
         epsilon = INITIAL_EPSILON
 
     tick = 0
-    # while tick < 500:
     while (True):
         loss = 0
         q_max = 0
@@ -245,7 +241,7 @@ def train_network(model, env, args):
             else:
                 # input a stack of 4 images, get the prediction
                 q = model.predict(state_stack)
-                print(q)
+                # print(q)
                 max_Q = np.argmax(q)
                 action_index = max_Q
                 action[max_Q] = 1
@@ -259,9 +255,10 @@ def train_network(model, env, args):
         game_state_t1 = preprocess_observation(obs)
 
         game_state_t1 = game_state_t1.reshape(
-            1, 1, game_state_t1.shape[0], game_state_t1.shape[1])
+            1, game_state_t1.shape[0], game_state_t1.shape[1], 1)
+
         state_stack_t1 = np.append(
-            game_state_t1, state_stack[:, :IMG_CHANNELS-1, :, :], axis=1)
+            game_state_t1, state_stack[:, :, :, :IMG_CHANNELS-1], axis=3)
 
         # store the transition in the replay memory
         replay_mem.append(
