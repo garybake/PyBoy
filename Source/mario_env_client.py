@@ -207,7 +207,7 @@ def train_network(model, env, args):
 
     # TODO why do we need to reshape in Keras?
     state_stack = state_stack.reshape(1, state_stack.shape[0], state_stack.shape[1], state_stack.shape[2])
-    print(state_stack.shape)
+
     if args['mode'] == 'run':
         mode = 'run'
         # We keep observe, never train
